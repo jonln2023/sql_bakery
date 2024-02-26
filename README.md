@@ -2,6 +2,6 @@
 
 this should work on a fresh installation of Ubuntu 22.04.
 
-sudo apt install mysql-server
-sudo ./change_firewall.sh 10001
-sudo ./setup_sql_part1.py
+1. sudo apt install mysql-server
+2. sudo ./change_firewall.sh 10001
+3. sudo ./setup_sql_part1.py
