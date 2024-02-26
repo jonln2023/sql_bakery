@@ -63,5 +63,5 @@ def make_user():
 	child.sendline("quit")
 	child.close()
 
-copy_mysqld()
+#copy_mysqld()
 setup_sql()
