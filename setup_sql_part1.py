@@ -6,24 +6,23 @@ import os
 import sys
 import pexpect
 from subprocess import run, PIPE
+from shutil import copy
+
 def setup_sql():
-	if os.getuid() != 0:
-		print("Please run as root!")
-		sys.exit()
 	password="better458WORD*()"
 	child=pexpect.spawn('sudo mysql')
 	child.sendline(f"alter user 'root'@'localhost' identified with mysql_native_password by '{password}';")
+
+	#Comment this out if you don't want to run it over and over again.
 	run(['mysql_secure_installation'])
 	child.sendline("alter user 'root'@'localhost' identified with auth_socket;")
-	#print('2',child.readline())
 	child.sendline('quit')
 	child.close()
 	return
-	
-#usage: copy_mysqld.py $(get_ip.sh)
 
-#import sys
 def copy_mysqld():
+	# Copy mysqld.cnf with the user's IP address. 
+	# This will allow external connections.
 	output = run(["bash", "get_ip.sh"], stdout=PIPE)
 	IP_ADDR = output.stdout.decode('utf-8')
 	OUTPUT_FILE = "mysqld.cnf.backup"
@@ -32,30 +31,29 @@ def copy_mysqld():
 
 	line_port = f"port\t\t= 10001\n"
 	line_bind_addr = f"bind-address\t\t= {IP_ADDR}\n"
-	print(IP_ADDR)
-	return
-	with open(INPUT_FILE,'r') as input_file, open(OUTPUT_FILE,'w') as output_file:
-		while True:
-			line=input_file.readline()
-			if not line:
-				break
-			elif line.startswith("bind-address\t\t="):
-				output_file.write(line_bind_addr)
-			elif line.startswith("port"):
-				output_file.write(line_port)
-			else:
-				output_file.write(line)
-	print("Copy was successful")
-	print(f"Now run 'sudo cp {OUTPUT_FILE} {DESTINATION_FILE}'")
-
+	input_file=open(INPUT_FILE, 'r')
+	output_file=open(OUTPUT_FILE,'w')
+	while True:
+		line=input_file.readline()
+		if not line:
+			break
+		elif line.startswith("bind-address\t\t="):
+			output_file.write(line_bind_addr)
+		elif line.startswith("port"):
+			output_file.write(line_port)
+		else:
+			output_file.write(line)
+	#print("Copy was successful")
+	input_file.close()
+	output_file.close()
+	copy(OUTPUT_FILE, DESTINATION_FILE)
 
 def make_user():
-	if os.getuid() != 0:
-		print("Please run as root!")
-		sys.exit()
-
+	#2/27: gotta test this again. The syntax is technically correct but needs testing.
+	# Make a user for external connections.
+	# This assumes the user has a MySQL client installed on their computer.
 	user="Jon"	#Your name here
-	KALI_IP="10.0.0.209"	#doesn't have to be Kali
+	KALI_IP="10.0.0.209"	# doesn't have to be Kali.
 
 	child=pexpect.spawn('sudo mysql')
 	child.sendline(f"create user '{user}'@'{KALI_IP}' identified by 'PASS456word&*(';")
@@ -63,5 +61,10 @@ def make_user():
 	child.sendline("quit")
 	child.close()
 
-#copy_mysqld()
+
+if os.getuid() != 0:
+	print("Please run as root!")
+	sys.exit()
 setup_sql()
+copy_mysqld()
+#make_user()
